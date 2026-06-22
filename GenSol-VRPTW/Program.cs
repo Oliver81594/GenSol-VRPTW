@@ -10,7 +10,7 @@
             int populationSize = 500;
             int generationsCount = 100000;
             double mutationRate = 0.5;
-            int elitismRate = 0;
+            int elitismRate = 2;
             int perVehiclePenalty = 0;
 
             try
