@@ -52,6 +52,7 @@ namespace GenSol_VRPTW
             return instance;
         }
 
+        // Parses a single line of customer data into a Customer object
         Customer ParseCustomer(String line)
         {
             String[] splitLine = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);

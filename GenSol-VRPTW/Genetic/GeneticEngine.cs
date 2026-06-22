@@ -24,6 +24,7 @@ namespace GenSol_VRPTW
             _random = new Random();
         }
 
+        // Generate a set size population of random chromosomes == random orders of customers
         public List<Chromosome> InitializePopulation(int perVehiclePenalty)
         {
             List<Chromosome> population = new List<Chromosome>();
@@ -59,6 +60,8 @@ namespace GenSol_VRPTW
             return population;
         }
 
+        // Select the best chromosome from a random sample
+        // This chromosome will be used as one of two parents
         private Chromosome TournamentSelection(List<Chromosome> population, int tournamenSize = 5)
         {
             Chromosome bestCandidate = null;
@@ -75,6 +78,7 @@ namespace GenSol_VRPTW
             return bestCandidate;
         }
 
+        // A chromosome mutation that will invert random segment of the sequence
         private int[] InvertMutation(int[] sequence)
         {
             int[] mutatedSequence = (int[])sequence.Clone();
@@ -97,6 +101,9 @@ namespace GenSol_VRPTW
             return mutatedSequence;
         }
 
+        // Method for generating an offspring chromosome for the next generation
+        // from two parent chromosomes by choosing a random segment from parent1
+        // and filling the rest using parent2
         private int[] OrderCrossover(int[] parent1, int[] parent2)
         {
             int size = parent1.Length;
@@ -104,11 +111,13 @@ namespace GenSol_VRPTW
 
             Array.Fill(child, -1);
 
+            // Choose random segment from parent1
             int point1 = _random.Next(size);
             int point2 = _random.Next(size);
             int start = Math.Min(point1, point2);
             int end = Math.Max(point1, point2);
 
+            // Transfer it to the child
             for(int i=start; i <= end; i++)
             {
                 child[i] = parent1[i];
@@ -118,6 +127,7 @@ namespace GenSol_VRPTW
             int parent2Index = (end + 1) % size;
             int elementsCopied = (end - start) + 1;
 
+            // Fill the rest of the child's sequence using parent2
             while(elementsCopied < size)
             {
                 int candidateGene = parent2[parent2Index];
@@ -144,6 +154,8 @@ namespace GenSol_VRPTW
             return child;
         }
 
+        // Evolutionary loop for creating new generations using OrderCrossover and Mutations by inversing
+        // Keeps track of the best individual chromosome found so far
         public Chromosome RunEvolution(int generations, double mutationRate, int elitisimRate, int perVehiclePenalty)
         {
             List<Chromosome> currentPopulation = InitializePopulation(perVehiclePenalty);
@@ -157,18 +169,21 @@ namespace GenSol_VRPTW
                 var sortedPopulation = currentPopulation.OrderBy(c => c.Fitness).ToList();
                 
                 // Enforce Elitism - X shortest paths copy to the next generation
-                // This way our solution never worsens
+                // This way the solution never worsens
                 int elitismCount = Math.Min(elitisimRate, sortedPopulation.Count);
                 for(int i=0; i < elitismCount; i++)
                 {
                     nextPopulation.Add(sortedPopulation[i]);
                 }
 
+                // Populate the new generation
                 while ( nextPopulation.Count < PopulationSize )
                 {
+                    // Choose two parents using tournament selection
                     Chromosome parent1 = TournamentSelection(currentPopulation);
                     Chromosome parent2 = TournamentSelection(currentPopulation);
 
+                    // Procure a child chromosome using Order Crossover and possibly mutate it
                     int[] childSequence = OrderCrossover(parent1.Sequence, parent2.Sequence);
 
                     if (_random.NextDouble() < mutationRate)
@@ -176,7 +191,7 @@ namespace GenSol_VRPTW
                         childSequence = InvertMutation(childSequence);
                     }
 
-                    
+                    // Decode the child chromosome into a set of routes and optimize each route using 2-opt
                     List<Route> rawRoutes = _evaluator.DecodeChromosome(childSequence, _problem);
 
                     ILocalSearch optimizer = new TwoOptOptimizer();
@@ -186,7 +201,8 @@ namespace GenSol_VRPTW
                     {
                         optimizedRoutes.Add(optimizer.Optimize(truckRoute, _problem));
                     }
-
+                    
+                    // Convert the optimized routes back into a chromosome sequence
                     int[] optimizedSequence = new int[childSequence.Length];
                     int pointer = 0;
                     foreach (Route truckRoute in optimizedRoutes)
@@ -198,16 +214,19 @@ namespace GenSol_VRPTW
                         }
                     }
 
+                    // Create a new Chromosome object for the child and calculate its fitness
                     Chromosome child = new Chromosome(optimizedSequence)
                     {
                         Fitness = _evaluator.CalculateFitness(optimizedSequence, _problem, perVehiclePenalty)
                     };
 
+                    // Add the child to the next generation
                     nextPopulation.Add(child);
                 }
 
                 currentPopulation = nextPopulation;
 
+                // Update the best solution found so far if the best in the current generation is better
                 Chromosome generationBest = currentPopulation.OrderBy(c => c.Fitness).First();
                 if(generationBest.Fitness < bestEverSolution.Fitness)
                 {

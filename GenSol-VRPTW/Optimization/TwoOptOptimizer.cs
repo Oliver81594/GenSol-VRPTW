@@ -4,6 +4,7 @@ using System.Text;
 
 namespace GenSol_VRPTW
 {
+    // Implements the 2-opt local search optimization algorithm for improving routes in the VRPTW problem
     internal class TwoOptOptimizer : ILocalSearch
     {
         public Route Optimize(Route originalRoute, ProblemInstance problem)
@@ -49,6 +50,7 @@ namespace GenSol_VRPTW
             return bestRoute;
         }
 
+        // Reverses a segment of the sequence from index 'start' to index 'end' (inclusive)
         private int[] ReverseSegment(int[] sequence, int start, int end)
         {
             int[] newSequence = (int[])sequence.Clone();

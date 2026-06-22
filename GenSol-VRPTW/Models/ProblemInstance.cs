@@ -4,6 +4,8 @@ using System.Text;
 
 namespace GenSol_VRPTW
 {
+    // Represents a single instance of the Vehicle Routing Problem with Time Windows (VRPTW)
+    // includes the depot, customers, and vehicle constraints.
     internal class ProblemInstance
     {
         public String InstanceName { get; }
@@ -12,6 +14,7 @@ namespace GenSol_VRPTW
         public List<Customer> Customers { get; }
         public Customer Depot {  get; }
 
+        // Initializes a new instance of the ProblemInstance class with the specified parameters
         public ProblemInstance(String instanceName, int vehicleNumber, int vehicleCapacity, List<Customer> customers, Customer depot)
         {
             this.InstanceName = instanceName;
@@ -30,6 +33,7 @@ namespace GenSol_VRPTW
             return Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
         }
 
+        // Prints a summary of the problem instance
         public void PrintSummary()
         {
             Console.WriteLine("=================================================");

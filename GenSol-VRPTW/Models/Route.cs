@@ -4,6 +4,8 @@ using System.Text;
 
 namespace GenSol_VRPTW
 {
+    // Represents a route taken by a vehicle in the VRPTW problem
+    // includes the list of customers visited, total distance traveled, current load, and current time
     internal class Route
     {
         public List<Customer> Customers { get; } = new List<Customer>();

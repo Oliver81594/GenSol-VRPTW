@@ -4,25 +4,29 @@
     {
         static void Main(string[] args)
         {
+            // Define paths and parameters
             String inputPath = "C:\\Users\\olima\\Downloads\\py-ga-VRPTW-master\\data\\text\\R101.txt";
             string outputCsvPath = @"C:\\Users\\olima\\Downloads\\Convergence_C101.csv";
 
             int populationSize = 500;
             int generationsCount = 100000;
             double mutationRate = 0.5;
-            int elitismRate = 2;
+            int elitismRate = 0;
             int perVehiclePenalty = 0;
 
             try
             {
+                // Parse input
                 Console.WriteLine("=== INITIALIZING INSTANCE ENGINE ===");
                 SolomonParser parser = new SolomonParser(inputPath);
                 ProblemInstance problem = parser.ParseFile();
                 Console.WriteLine($"Loaded: {problem.InstanceName} | Customers: {problem.Customers.Count - 1}");
 
+                // Initialize GA
                 Console.WriteLine("\n=== RUNNING GENETIC ALGORITHM ===");
                 GeneticEngine engine = new GeneticEngine(populationSize, problem);
 
+                // Prepare output logging into CSV
                 CSVLogger csvLogger = new CSVLogger(outputCsvPath);
                 engine.OnGenerationCompleted += csvLogger.LogGeneration;
 
@@ -34,8 +38,10 @@
                     }
                 };
 
+                // Run the Evolution
                 Chromosome optimizedResult = engine.RunEvolution(generationsCount, mutationRate, elitismRate, perVehiclePenalty);
 
+                // Print results
                 Console.WriteLine("\n=== OPTIMIZATION RUN COMPLETE ===");
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Final Score Achieved: {optimizedResult.Fitness:F2}");
