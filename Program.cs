@@ -1,0 +1,57 @@
+﻿namespace GenSol_VRPTW
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            String inputPath = "C:\\Users\\olima\\Downloads\\py-ga-VRPTW-master\\data\\text\\R101.txt";
+            string outputCsvPath = @"C:\\Users\\olima\\Downloads\\Convergence_C101.csv";
+
+            int populationSize = 500;
+            int generationsCount = 100000;
+            double mutationRate = 0.5;
+            int elitismRate = 0;
+            int perVehiclePenalty = 0;
+
+            try
+            {
+                Console.WriteLine("=== INITIALIZING INSTANCE ENGINE ===");
+                SolomonParser parser = new SolomonParser(inputPath);
+                ProblemInstance problem = parser.ParseFile();
+                Console.WriteLine($"Loaded: {problem.InstanceName} | Customers: {problem.Customers.Count - 1}");
+
+                Console.WriteLine("\n=== RUNNING GENETIC ALGORITHM ===");
+                GeneticEngine engine = new GeneticEngine(populationSize, problem);
+
+                CSVLogger csvLogger = new CSVLogger(outputCsvPath);
+                engine.OnGenerationCompleted += csvLogger.LogGeneration;
+
+                engine.OnGenerationCompleted += (generation, fitness) =>
+                {
+                    if (generation == 1 || generation % 50 == 0)
+                    {
+                        Console.WriteLine($"Generation {generation,4} | Best Fitness: {fitness:F2}");
+                    }
+                };
+
+                Chromosome optimizedResult = engine.RunEvolution(generationsCount, mutationRate, elitismRate, perVehiclePenalty);
+
+                Console.WriteLine("\n=== OPTIMIZATION RUN COMPLETE ===");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Final Score Achieved: {optimizedResult.Fitness:F2}");
+                Console.ResetColor();
+
+                // Decode the absolute best sequence one last time to inspect vehicle count
+                EvaluationEngine decoder = new EvaluationEngine();
+                var finalRoutes = decoder.DecodeChromosome(optimizedResult.Sequence, problem);
+                Console.WriteLine($"Total Fleet Deployment: {finalRoutes.Count} trucks used.");
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[CRITICAL TERMINATION] {ex.Message}");
+                Console.ResetColor();
+            }
+        }
+    }
+}
