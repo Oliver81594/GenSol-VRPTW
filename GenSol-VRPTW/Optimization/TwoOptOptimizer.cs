@@ -16,7 +16,11 @@ namespace GenSol_VRPTW
             bool improvement = true;
             Route bestRoute = originalRoute;
 
-            int[] bestSequence = originalRoute.Customers.Select(c => c.Id).ToArray();
+            int[] bestSequence = new int[originalRoute.Customers.Count];
+            for (int i = 0; i < originalRoute.Customers.Count; i++)
+            {
+                bestSequence[i] = originalRoute.Customers[i].Id;
+            }
 
             while (improvement) 
             {

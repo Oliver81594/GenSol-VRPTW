@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace GenSol_VRPTW
 {
@@ -164,7 +166,7 @@ namespace GenSol_VRPTW
 
             for(int gen=1; gen <= generations; gen++)
             {
-                List<Chromosome> nextPopulation = new List<Chromosome>();
+                ConcurrentBag<Chromosome> nextPopulation = new ConcurrentBag<Chromosome>();
 
                 var sortedPopulation = currentPopulation.OrderBy(c => c.Fitness).ToList();
                 
@@ -177,18 +179,26 @@ namespace GenSol_VRPTW
                 }
 
                 // Populate the new generation
-                while ( nextPopulation.Count < PopulationSize )
+                int childrenToGenerate = PopulationSize - elitisimRate;
+
+                Parallel.For(0, childrenToGenerate, i =>
                 {
-                    // Choose two parents using tournament selection
-                    Chromosome parent1 = TournamentSelection(currentPopulation);
-                    Chromosome parent2 = TournamentSelection(currentPopulation);
+                    Chromosome parent1, parent2;
+                    int[] childSequence;
 
-                    // Procure a child chromosome using Order Crossover and possibly mutate it
-                    int[] childSequence = OrderCrossover(parent1.Sequence, parent2.Sequence);
-
-                    if (_random.NextDouble() < mutationRate)
+                    // We must lock the random number generator so threads don't crash it
+                    lock (_random)
                     {
-                        childSequence = InvertMutation(childSequence);
+                        // Choose 2 parents and procure a child for next generation
+                        parent1 = TournamentSelection(currentPopulation);
+                        parent2 = TournamentSelection(currentPopulation);
+                        childSequence = OrderCrossover(parent1.Sequence, parent2.Sequence);
+
+                        // Mutate
+                        if (_random.NextDouble() < mutationRate)
+                        {
+                            childSequence = InvertMutation(childSequence);
+                        }
                     }
 
                     // Decode the child chromosome into a set of routes and optimize each route using 2-opt
@@ -201,7 +211,7 @@ namespace GenSol_VRPTW
                     {
                         optimizedRoutes.Add(optimizer.Optimize(truckRoute, _problem));
                     }
-                    
+
                     // Convert the optimized routes back into a chromosome sequence
                     int[] optimizedSequence = new int[childSequence.Length];
                     int pointer = 0;
@@ -222,9 +232,9 @@ namespace GenSol_VRPTW
 
                     // Add the child to the next generation
                     nextPopulation.Add(child);
-                }
+                });
 
-                currentPopulation = nextPopulation;
+                currentPopulation = nextPopulation.ToList();
 
                 // Update the best solution found so far if the best in the current generation is better
                 Chromosome generationBest = currentPopulation.OrderBy(c => c.Fitness).First();
