@@ -13,7 +13,7 @@ Because this is an academic optimization engine rather than a consumer applicati
 
 ### Requirements & Execution
 * **Prerequisites:** .NET 8.0 SDK and Visual Studio 2026.
-* **Input Data:** The solver parses raw text files formatted to the Solomon benchmark standard. Datasets should be placed in the `Data/` directory.
+* **Input Data:** The solver parses raw text files formatted to the Solomon benchmark standard. Datasets directory can be modified in `Main`.
 * **Configuration:** Hyperparameters (Population Size, Mutation Rate, Generations) and target file paths are configured directly in the `Main` method of `Program.cs`.
 * **Outputs:** * **Console:** Real-time generation progress and current best fitness scores.
     * **CSV Export:** Generates a `Convergence.csv` file mapping generation numbers to fitness scores for analytical graphing.
