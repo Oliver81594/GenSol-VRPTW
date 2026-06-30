@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 using System.Collections.Concurrent;
 
 namespace GenSol_VRPTW
@@ -16,7 +17,8 @@ namespace GenSol_VRPTW
 
         // This is trigerred on completing a generation
         // Currently used for outputting into console and CSV convergence sheet
-        public event Action<int, double> OnGenerationCompleted;
+        // The signature is now: Generation, Fitness, Trucks Used, True Distance
+        public event Action<int, double, int, double> OnGenerationCompleted;
 
         public GeneticEngine(int populationSize, ProblemInstance problem) 
         {
@@ -156,6 +158,49 @@ namespace GenSol_VRPTW
             return child;
         }
 
+        private int[] RelocateMutation(int[] sequence, ProblemInstance problem, int perVehiclePenalty)
+        {
+            int[] bestSequence = (int[])sequence.Clone();
+
+            // Evaluate the baseline score using our existing decoder
+            double bestDistance = _evaluator.CalculateFitness(bestSequence, problem, perVehiclePenalty);
+
+            // Pick one random customer to rip out of their current position
+            int sourceIndex = _random.Next(bestSequence.Length);
+            int targetCustomer = bestSequence[sourceIndex];
+
+            // Try dropping this customer into a small sample of other positions
+            // in the sequence and see if it improves the score
+            int testSamples = 5;
+
+            for (int i = 0; i < testSamples; i++)
+            {
+                int targetIndex = _random.Next(bestSequence.Length);
+                if (targetIndex == sourceIndex) continue;
+
+                int[] testSequence = ShiftElement(bestSequence, sourceIndex, targetIndex);
+                double testDistance = _evaluator.CalculateFitness(testSequence, problem, perVehiclePenalty);
+
+                if (testDistance < bestDistance)
+                {
+                    bestDistance = testDistance;
+                    bestSequence = testSequence;
+                    break;
+                }
+            }
+
+            return bestSequence;
+        }
+
+        private int[] ShiftElement(int[] array, int oldIndex, int newIndex)
+        {
+            List<int> temp = new List<int>(array);
+            int item = temp[oldIndex];
+            temp.RemoveAt(oldIndex);
+            temp.Insert(newIndex, item);
+            return temp.ToArray();
+        }
+
         // Evolutionary loop for creating new generations using OrderCrossover and Mutations by inversing
         // Keeps track of the best individual chromosome found so far
         public Chromosome RunEvolution(int generations, double mutationRate, int elitisimRate, int perVehiclePenalty)
@@ -199,6 +244,8 @@ namespace GenSol_VRPTW
                         {
                             childSequence = InvertMutation(childSequence);
                         }
+
+                        childSequence = RelocateMutation(childSequence, _problem, perVehiclePenalty);
                     }
 
                     // Decode the child chromosome into a set of routes and optimize each route using 2-opt
@@ -243,7 +290,12 @@ namespace GenSol_VRPTW
                     bestEverSolution = generationBest;
                 }
 
-                OnGenerationCompleted?.Invoke(gen, bestEverSolution.Fitness);
+                List<Route> bestRoutes = _evaluator.DecodeChromosome(bestEverSolution.Sequence, _problem);
+                int trucksUsed = bestRoutes.Count;
+                double actualDistance = bestRoutes.Sum(r => r.TotalDistance);
+
+                // Broadcast the expanded data payload
+                OnGenerationCompleted?.Invoke(gen, bestEverSolution.Fitness, trucksUsed, actualDistance);
             }
 
             return bestEverSolution;

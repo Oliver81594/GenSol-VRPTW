@@ -9,17 +9,17 @@ namespace GenSol_VRPTW
     {
         private readonly string _filePath;
 
-        // Initializes a new instance of the CSVLogger class and prepares the CSV file for logging.
         public CSVLogger(string filePath)
         {
             _filePath = filePath;
-            File.WriteAllText(_filePath, "Generation,BestFitness\n");
+            // Update the header to include the new columns
+            File.WriteAllText(_filePath, "Generation,BestFitness,VehiclesUsed,TotalDistance\n");
         }
 
-        // Logs the generation number and best fitness score into the CSV file.
-        public void LogGeneration(int generation, double bestFitness)
+        // Match the new event signature
+        public void LogGeneration(int generation, double bestFitness, int vehicles, double totalDistance)
         {
-            string csvLine = $"{generation},{bestFitness:F2}\n";
+            string csvLine = $"{generation},{bestFitness:F2},{vehicles},{totalDistance:F2}\n";
             File.AppendAllText(_filePath, csvLine);
         }
     }

@@ -5,14 +5,14 @@
         static void Main(string[] args)
         {
             // Define paths and parameters
-            String inputPath = "C:\\Users\\olima\\Downloads\\py-ga-VRPTW-master\\data\\text\\R101.txt";
+            String inputPath = "C:\\Users\\olima\\Downloads\\py-ga-VRPTW-master\\data\\text\\C201.txt";
             string outputCsvPath = @"C:\\Users\\olima\\Downloads\\Convergence_C101.csv";
 
             int populationSize = 500;
-            int generationsCount = 100000;
+            int generationsCount = 1000;
             double mutationRate = 0.5;
             int elitismRate = 0;
-            int perVehiclePenalty = 0;
+            int perVehiclePenalty = 50;
 
             try
             {
@@ -30,11 +30,11 @@
                 CSVLogger csvLogger = new CSVLogger(outputCsvPath);
                 engine.OnGenerationCompleted += csvLogger.LogGeneration;
 
-                engine.OnGenerationCompleted += (generation, fitness) =>
+                engine.OnGenerationCompleted += (generation, fitness, vehicles, distance) =>
                 {
                     if (generation == 1 || generation % 50 == 0)
                     {
-                        Console.WriteLine($"Generation {generation,4} | Best Fitness: {fitness:F2}");
+                        Console.WriteLine($"Gen {generation,4} | Fit: {fitness,-8:F2} | Trucks: {vehicles,-2} | Dist: {distance:F2}");
                     }
                 };
 
