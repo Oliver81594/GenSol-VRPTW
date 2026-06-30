@@ -158,7 +158,7 @@ namespace GenSol_VRPTW
             return child;
         }
 
-        private int[] RelocateMutation(int[] sequence, ProblemInstance problem, int perVehiclePenalty)
+        private int[] RelocateMutation(int[] sequence, ProblemInstance problem, int perVehiclePenalty, int interRouteOptSampleSize)
         {
             int[] bestSequence = (int[])sequence.Clone();
 
@@ -171,7 +171,7 @@ namespace GenSol_VRPTW
 
             // Try dropping this customer into a small sample of other positions
             // in the sequence and see if it improves the score
-            int testSamples = 5;
+            int testSamples = interRouteOptSampleSize;
 
             for (int i = 0; i < testSamples; i++)
             {
@@ -203,7 +203,7 @@ namespace GenSol_VRPTW
 
         // Evolutionary loop for creating new generations using OrderCrossover and Mutations by inversing
         // Keeps track of the best individual chromosome found so far
-        public Chromosome RunEvolution(int generations, double mutationRate, int elitisimRate, int perVehiclePenalty)
+        public Chromosome RunEvolution(int generations, double mutationRate, int elitisimRate, int perVehiclePenalty, bool enableLocalOptimization, bool enableInterRouteOptimization, int interRouteOptimizationSampleSize)
         {
             List<Chromosome> currentPopulation = InitializePopulation(perVehiclePenalty);
 
@@ -245,7 +245,9 @@ namespace GenSol_VRPTW
                             childSequence = InvertMutation(childSequence);
                         }
 
-                        childSequence = RelocateMutation(childSequence, _problem, perVehiclePenalty);
+                        // InterRoute Optimalization
+                        if(enableInterRouteOptimization)
+                            childSequence = RelocateMutation(childSequence, _problem, perVehiclePenalty, interRouteOptimizationSampleSize);
                     }
 
                     // Decode the child chromosome into a set of routes and optimize each route using 2-opt
@@ -256,7 +258,13 @@ namespace GenSol_VRPTW
 
                     foreach (Route truckRoute in rawRoutes)
                     {
-                        optimizedRoutes.Add(optimizer.Optimize(truckRoute, _problem));
+                        Route optimizedRoute = truckRoute;
+                        
+                        // Optimize only if flagged
+                        if (enableLocalOptimization)
+                            optimizedRoute = optimizer.Optimize(truckRoute, _problem);
+
+                        optimizedRoutes.Add(optimizedRoute);
                     }
 
                     // Convert the optimized routes back into a chromosome sequence

@@ -8,11 +8,20 @@
             String inputPath = "C:\\Users\\olima\\Downloads\\py-ga-VRPTW-master\\data\\text\\C201.txt";
             string outputCsvPath = @"C:\\Users\\olima\\Downloads\\Convergence_C101.csv";
 
+            // Fitness Function Parameters
+            int perVehiclePenalty = 50;
+
+            // Genetic Algorithm Parameters
             int populationSize = 500;
             int generationsCount = 1000;
             double mutationRate = 0.5;
             int elitismRate = 0;
-            int perVehiclePenalty = 50;
+
+            // Local Optimization Parameters
+            bool enableLocalOptimization = true;
+            bool enableInterRouteOptimization = true;
+            int interRouteOptimizationSampleSize = 1;
+
 
             try
             {
@@ -39,7 +48,7 @@
                 };
 
                 // Run the Evolution
-                Chromosome optimizedResult = engine.RunEvolution(generationsCount, mutationRate, elitismRate, perVehiclePenalty);
+                Chromosome optimizedResult = engine.RunEvolution(generationsCount, mutationRate, elitismRate, perVehiclePenalty, enableLocalOptimization, enableInterRouteOptimization, interRouteOptimizationSampleSize);
 
                 // Print results
                 Console.WriteLine("\n=== OPTIMIZATION RUN COMPLETE ===");
